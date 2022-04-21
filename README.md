@@ -24,3 +24,25 @@ Discord:
 - Username: What you want the webhook bot to be called
 - Accounts to tag - doesn't work yet
 ```
+
+## Run in docker
+```
+In secrets.json "SCHEDULER", enable "USE_PYTHON_RUNNABLE".
+(If this is off, the bot would run 1 time with docker. Could be used with a crontab)
+
+docker build -t username/querybot .
+docker run username/querybot
+```
+
+## Install on a system
+```
+git clone https://github.com/Reecepbcups/cosmos-balance-query.git
+
+cd cosmos-balance-query
+
+# Ensure you have python installed first. May just be `python` depending on your system
+python3 -m pip install --no-cache-dir -r requirements.txt
+
+# Edit secrets.json to your values, wallets, thresholds, etc.
+
+python3 cosmos-balance-query-bot.py
