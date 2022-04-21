@@ -13,14 +13,8 @@ Dict of chains in the following format:
 }
 
 From: https://github.com/Reecepbcups/CosmosGovernanceProposalBot/blob/main/ChainApis.py
-Will probably switch to ecostake cosmos directory in the future for herre
+Will probably switch to ecostake cosmos directory in the future for here
 '''
-
-# Define custom explorer links, useful when a chain has its own proposals page
-customExplorerLinks = {
-    "dig": "https://app.digchain.org/proposals",
-}
-
 
 # /cosmos/bank/v1beta1/balances/<address>
 
@@ -56,7 +50,7 @@ chainAPIs = {
         },
         '@osmosiszone'
         ],
-    'atom': [
+    'cosmos': [
         'https://lcd-cosmoshub.blockapsis.com/cosmos/bank/v1beta1/balances/',
         {
             "ping": 'https://ping.pub/cosmos/gov',
@@ -266,4 +260,7 @@ chainAPIs = {
         },        
         "@Umee_CrossChain"
         ],
+    "craft": [ 
+        'http://65.108.125.182:1317/cosmos/bank/v1beta1/balances/',
+    ]
 }
