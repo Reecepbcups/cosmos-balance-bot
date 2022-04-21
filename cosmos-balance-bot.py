@@ -11,8 +11,8 @@ Run:
 - python cosmos-balance-bot.py
 
 Docker:
-- docker build -t reecepbcups/querybot .
-- docker run reecepbcups/querybot
+- docker build -t reecepbcups/balancebot .
+- docker run reecepbcups/balancebot
 
 *Get REST lcd's in chain.json from https://github.com/cosmos/chain-registry
 '''

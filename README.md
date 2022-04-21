@@ -33,8 +33,8 @@ Discord:
 In secrets.json "SCHEDULER", enable "USE_PYTHON_RUNNABLE".
 (If this is off, the bot would run 1 time with docker. Could be used with a crontab)
 
-docker build -t username/querybot .
-docker run username/querybot
+docker build -t username/balancebot .
+docker run username/balancebot
 ```
 
 ## Install on a system
