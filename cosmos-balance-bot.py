@@ -8,7 +8,7 @@ Install:
 - pip install --no-cache-dir -r requirements.txt
 
 Run:
-- python cosmos-balance-query-bot.py
+- python cosmos-balance-bot.py
 
 Docker:
 - docker build -t reecepbcups/querybot .
