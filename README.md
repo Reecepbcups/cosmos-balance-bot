@@ -1,5 +1,5 @@
 # cosmos-balance-bot
-A useful little bot for Relayers, Validators using restake.app, hot wallets, and anthign else you want to track!
+A useful little bot for Relayers, Validators using restake.app, Akash Escrow Accounts, hot wallets, and anything else you want to track!
 
 <img src="https://user-images.githubusercontent.com/31943163/164518627-e950400b-0ee9-4aa6-89b6-2508546f3b9c.png" alt="bot image" width="450"/>
 
