@@ -1,4 +1,6 @@
-# cosmos-balance-query
+# cosmos-balance-query bot
+
+![image](https://user-images.githubusercontent.com/31943163/164518627-e950400b-0ee9-4aa6-89b6-2508546f3b9c.png)
 
 ## Setup:
 ```
