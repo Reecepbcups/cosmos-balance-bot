@@ -1,6 +1,6 @@
 # cosmos-balance-query bot
 
-<img src="https://user-images.githubusercontent.com/31943163/164518627-e950400b-0ee9-4aa6-89b6-2508546f3b9c.png" width="25%")
+<img src="https://user-images.githubusercontent.com/31943163/164518627-e950400b-0ee9-4aa6-89b6-2508546f3b9c.pngpng" alt="bot image" width="450"/>
 
 ## Setup:
 ```
