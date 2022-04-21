@@ -39,9 +39,9 @@ docker run username/querybot
 
 ## Install on a system
 ```
-git clone https://github.com/Reecepbcups/cosmos-balance-query.git
+git clone https://github.com/Reecepbcups/cosmos-balance-bot
 
-cd cosmos-balance-query
+cd cosmos-balance-bot
 
 # Ensure you have python installed first. May just be `python` depending on your system
 python3 -m pip install --no-cache-dir -r requirements.txt
