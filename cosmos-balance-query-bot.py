@@ -25,14 +25,6 @@ from discord import Webhook, RequestsWebhookAdapter
 
 from ChainApis import chainAPIs
 
-# == Configuration ==
-
-DISCORD = False
-TWITTER = False
-TELEGRAM = True
-# If false, it is up to you to schedule via crontab -e such as: */30 * * * * cd /root/twitterGovBot && python3 twitterGovernanceBot.py
-USE_PYTHON_RUNNABLE = False
-
 NOTIFIERS = { # {wallet: { "good": 100.0, "warning": 50.0, "low": 10.0}}
     "good": [0x00FF00,"https://image.similarpng.com/very-thumbnail/2021/05/Checkmark-green-tick-isolated-on-transparent-background-PNG.png"],
     "warning": [0xFFFF00,"https://media.istockphoto.com/vectors/warning-sign-yellow-exclamation-mark-icon-danger-sign-attention-sign-vector-id1165690157?k=20&m=1165690157&s=612x612&w=0&h=nU2Iow3Lbg66noibsRdlZkvwnHwEC6mOddnY024i3mQ="],
@@ -42,12 +34,19 @@ NOTIFIERS = { # {wallet: { "good": 100.0, "warning": 50.0, "low": 10.0}}
 
 # Don't touch below --------------------------------------------------
 
-with open('test-secrets.json', 'r') as f:
+with open('secrets.json', 'r') as f:
     secrets = json.load(f)
+
+    DISCORD = secrets["DISCORD"]["ENABLED"]
+    TWITTER = secrets["TWITTER"]["ENABLED"]
+    TELEGRAM = secrets["TELEGRAM"]["ENABLED"]
+
+    USE_PYTHON_RUNNABLE = secrets["SCHEDULER"]["USE_PYTHON_RUNNABLE"]
+    SCHEDULE_MINUTES = secrets["SCHEDULER"]["IF_ABOVE_IS_TRUE_HOW_MANY_MINUTES_BETWEEN_CHECKS"]
 
     WALLETS = secrets['WALLETS'] # {wallet: { "good": 100.0, "warning": 50.0, "low": 10.0}}
     SIMPLIFY_UDENOM = secrets['SIMPLIFY_UDENOM_VALUES_TO_READABLE']# divided values by 1_000_000
-    ALWAYS_NOTIFY = secrets['ALWAYS_NOTIFY']
+    NOTIFY_GOOD_BALANCES = secrets['NOTIFY_GOOD_BALANCES']
 
     if TWITTER:
         twitSecrets = secrets['TWITTER']
@@ -96,34 +95,34 @@ def balanceCheck(chain, walletAddr) -> dict:
     return dict(output)
     
 def post_update(chain, walletAddress, balanceDict):
+    balance = balanceDict[list(balanceDict.keys())[0]] # main coin balance
 
-    HEX_COLOR = 0xFFFFF
-    IMG_URL = "https://cdn.pixabay.com/photo/2015/12/16/17/41/bell-1096280_960_720.png"
-    titleMsg = f" Notification"
+    # if SIMPLIFY_UDENOM_VALUES_TO_READABLE is true, we have to multiply amt?
+    
+    WARNING_LEVEL = WALLETS[walletAddress]['warning']
+    LOW_LEVEL = WALLETS[walletAddress]['low']
 
-    if ALWAYS_NOTIFY:
-        # continue on
-        pass
+    myValue = ""
+    titleMsg = ""
+
+    if balance > WARNING_LEVEL:
+        myValue = "good"
+        titleMsg += f"{myValue.upper()} ( >{WARNING_LEVEL} )"
+
+    elif balance < WARNING_LEVEL and balance > LOW_LEVEL:
+        myValue = "warning"
+        titleMsg += f"{myValue.upper()} ( <{WARNING_LEVEL} )"
+
     else:
-        # balanceDict[list(balanceDict.keys())[0]] > WALLETS[walletAddress]
-        balance = balanceDict[list(balanceDict.keys())[0]]
+        myValue = "low"
+        titleMsg += f"{myValue.upper()} ( <{LOW_LEVEL} )"
 
-        for threshold in WALLETS[walletAddress].keys():
-            amt = WALLETS[walletAddress][threshold]
-
-            if threshold == "good":
-                if balance > WALLETS[walletAddress][threshold]:
-                    HEX_COLOR = NOTIFIERS[threshold][0]
-                    IMG_URL = NOTIFIERS[threshold][1]
-                    titleMsg = f"{threshold.upper()} ( >{amt} )"
-                    break
-
-            if balance < amt:
-                HEX_COLOR = NOTIFIERS[threshold][0]
-                IMG_URL = NOTIFIERS[threshold][1]
-                titleMsg = f"{threshold.upper()} ( <{amt} )"
-                continue
-            
+    HEX_COLOR = NOTIFIERS[myValue][0]
+    IMG_URL = NOTIFIERS[myValue][1]
+           
+    # dont past if we do not want to show good balances
+    if myValue == "good" and NOTIFY_GOOD_BALANCES == False:
+        return
 
     betterBalance = ""
     for d in balanceDict.keys():
@@ -133,14 +132,6 @@ def post_update(chain, walletAddress, balanceDict):
     print(message)
 
     # print("Exit 0 in post_update for debugging"); exit(0)
-
-    # if ALWAYS_NOTIFY, notify no matter what.
-    # else, if balanceDict of first key > WALLETS["walletAddress]
-
-
-
-        # print(f"Wallet does not meet threshold. {} > {WALLETS[walletAddress]}")
-        # return
 
     try:
         if TWITTER:
@@ -174,8 +165,6 @@ def runChecks():
                 checkedWallets.append(wallet)
                 b = balanceCheck(chain, wallet)
                 post_update(chain, wallet, b)
-                print("BREAKING ON PURPOSE")
-                exit(1)
 
     print(f"Wallets checked {time.ctime()}, waiting...")
 
@@ -191,7 +180,7 @@ def runChecks():
 if __name__ == "__main__":        
 
     # informs user & setups of legnth of time between runs
-    # SCHEDULE_SECONDS = 30*60
+    # 
 
     # if DISCORD:
     #     print("DISCORD module enabled")
@@ -203,12 +192,12 @@ if __name__ == "__main__":
     runChecks()
 
     # If user does not use a crontab, this can be run in a screen/daemon session
-    # if USE_PYTHON_RUNNABLE:      
-    #     schedule.every(SCHEDULE_SECONDS).seconds.do(runChecks)  
-    #     while True:
-    #         print("Running runnable then waiting...")
-    #         schedule.run_pending()
-    #         time.sleep(SCHEDULE_SECONDS)
+    if USE_PYTHON_RUNNABLE:      
+        schedule.every(SCHEDULE_MINUTES).minutes.do(runChecks)  
+        while True:
+            # print("Running runnable then waiting...")
+            schedule.run_pending()
+            time.sleep(SCHEDULE_MINUTES*60)
             
 
     
