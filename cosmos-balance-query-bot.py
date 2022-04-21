@@ -1,24 +1,28 @@
 #!/usr/bin/python3
 
 '''
-Reece Williams (Reecepbcups | PBCUPS Validator) | February 9th, 2022
-- Twitter bot to monitor and report on COSMOS governance proposals
-- (Mar 8) Discord webhook to post proposals 
-- (Mar 12) Discord Threads to allow for discussion of new proposals 
+Reece Williams (Reecepbcups | PBCUPS Validator [$OSMO, $DIG]) | April 21st, 2022
+- Twitter & Discord Integration + Endpoints
 
-python3 -m pip install requests tweepy schedule discord
+Install:
+- pip install --no-cache-dir -r requirements.txt
+
+Run:
+- python cosmos-balance-query-bot.py
+
+Docker:
+- docker build -t reecepbcups/querybot .
+- docker run reecepbcups/querybot
 
 *Get REST lcd's in chain.json from https://github.com/cosmos/chain-registry
 '''
 
 import datetime
 import discord
-import json
-import os
-from numpy import r_
 import requests
 import schedule
 import time
+import json
 import tweepy
 
 from discord import Webhook, RequestsWebhookAdapter
@@ -77,6 +81,10 @@ def balanceCheck(chain, walletAddr) -> dict:
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36'}
     ) 
 
+    if r.status_code != 200:
+        print(f"Error: {r.status_code} on {chainAPIs[chain][0]}")
+        return {}
+
     # http://65.108.125.182:1317/cosmos/bank/v1beta1/balances/craft10r39fueph9fq7a6lgswu4zdsg8t3gxlqd6lnf0
     balances = r.json()['balances']
 
@@ -95,6 +103,9 @@ def balanceCheck(chain, walletAddr) -> dict:
     return dict(output)
     
 def post_update(chain, walletAddress, balanceDict):
+    if balanceDict == {}:
+        return
+
     balance = balanceDict[list(balanceDict.keys())[0]] # main coin balance
 
     # if SIMPLIFY_UDENOM_VALUES_TO_READABLE is true, we have to multiply amt?
@@ -122,6 +133,7 @@ def post_update(chain, walletAddress, balanceDict):
            
     # dont past if we do not want to show good balances
     if myValue == "good" and NOTIFY_GOOD_BALANCES == False:
+        print(f"{walletAddress} is good, notify good balances is just off")
         return
 
     betterBalance = ""
@@ -178,17 +190,6 @@ def runChecks():
 
 
 if __name__ == "__main__":        
-
-    # informs user & setups of legnth of time between runs
-    # 
-
-    # if DISCORD:
-    #     print("DISCORD module enabled")
-    # if TWITTER:
-    #     print("TWITTER module enabled")
-    # if TELEGRAM:
-    #     print("TELEGRAM module enabled")
-
     runChecks()
 
     # If user does not use a crontab, this can be run in a screen/daemon session
