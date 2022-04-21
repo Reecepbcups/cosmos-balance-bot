@@ -27,8 +27,9 @@ from ChainApis import chainAPIs
 
 # == Configuration ==
 
-DISCORD = True
+DISCORD = False
 TWITTER = False
+TELEGRAM = True
 # If false, it is up to you to schedule via crontab -e such as: */30 * * * * cd /root/twitterGovBot && python3 twitterGovernanceBot.py
 USE_PYTHON_RUNNABLE = False
 
@@ -41,7 +42,7 @@ NOTIFIERS = { # {wallet: { "good": 100.0, "warning": 50.0, "low": 10.0}}
 
 # Don't touch below --------------------------------------------------
 
-with open('secrets.json', 'r') as f:
+with open('test-secrets.json', 'r') as f:
     secrets = json.load(f)
 
     WALLETS = secrets['WALLETS'] # {wallet: { "good": 100.0, "warning": 50.0, "low": 10.0}}
@@ -147,8 +148,8 @@ def post_update(chain, walletAddress, balanceDict):
                 twitterAt = f'@{acc}' if not acc.startswith('@') else acc
                 message += f" | {twitterAt}"
 
-            # tweet = api.update_status(message)
-            # print(f"Tweet sent for {tweet.id}: {message}")
+            tweet = api.update_status(message)
+            print(f"Tweet sent for {tweet.id}: {message}")
 
         if DISCORD:
             embed = discord.Embed(title=f"{chain.upper()} BALANCE {titleMsg}", description=walletAddress, timestamp=datetime.datetime.utcnow(), color=HEX_COLOR) #color=discord.Color.dark_gold()
@@ -173,6 +174,8 @@ def runChecks():
                 checkedWallets.append(wallet)
                 b = balanceCheck(chain, wallet)
                 post_update(chain, wallet, b)
+                print("BREAKING ON PURPOSE")
+                exit(1)
 
     print(f"Wallets checked {time.ctime()}, waiting...")
 
