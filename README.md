@@ -13,7 +13,7 @@ Delegate:
 - [Osmosis](https://ping.pub/osmosis/staking/osmovaloper18yaulrk9czghegrnykfe4fthl69m488qsrrfdr)
 
 </br>
-<img src="https://user-images.githubusercontent.com/31943163/164518627-e950400b-0ee9-4aa6-89b6-2508546f3b9c.png" alt="bot image" width="300"/>
+<img src="https://user-images.githubusercontent.com/31943163/164914003-4df196f6-99a0-44ba-9537-d3901aabfb7f.png" alt="bot image" width="300"/>
 
 ## Setup:
 ```
