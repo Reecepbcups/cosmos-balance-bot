@@ -29,7 +29,7 @@ from discord import Webhook, RequestsWebhookAdapter
 
 from ChainApis import chainAPIs
 
-NOTIFIERS = { # {wallet: { "good": 100.0, "warning": 50.0, "low": 10.0}}
+NOTIFIERS = { # {wallet: { "note: "optional note", "warning": 50.0, "low": 10.0}}
     "good": [0x00FF00,"https://image.similarpng.com/very-thumbnail/2021/05/Checkmark-green-tick-isolated-on-transparent-background-PNG.png"],
     "warning": [0xFFFF00,"https://media.istockphoto.com/vectors/warning-sign-yellow-exclamation-mark-icon-danger-sign-attention-sign-vector-id1165690157?k=20&m=1165690157&s=612x612&w=0&h=nU2Iow3Lbg66noibsRdlZkvwnHwEC6mOddnY024i3mQ="],
     "low": [0xFF0000,"https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Cross_red_circle.svg/2048px-Cross_red_circle.svg.png"],
@@ -70,24 +70,14 @@ with open('secrets.json', 'r') as f:
         discSecrets = secrets['DISCORD']
         WEBHOOK_URL = discSecrets['WEBHOOK_URL']
         USERNAME = discSecrets['USERNAME']
-        DISCORD_ACCOUNTS_TO_TAG = discSecrets['ACCOUNTS_TO_TAG']
 
 
-def balanceCheck(chain, walletAddr) -> dict:
-    queryEndpoint = chainAPIs[chain][0] + walletAddr
-
-    r = requests.get(queryEndpoint, headers={
-        'accept': 'application/json', 
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36'}
-    ) 
-
-    if r.status_code != 200:
-        print(f"Error: {r.status_code} on {chainAPIs[chain][0]}")
-        return {}
-
-    # http://65.108.125.182:1317/cosmos/bank/v1beta1/balances/craft10r39fueph9fq7a6lgswu4zdsg8t3gxlqd6lnf0
-    balances = r.json()['balances']
-
+def simplifyBalances(balances: dict):
+    '''
+    After using getBalances(chain, wallet) function return -> dict:
+    Reduces [{"denom": "ucraft","amount": "69908452"},{"denom": "uexp","amount": "1000100"}]
+    To: {'ucraft':69908452, 'uexp':1000100}
+    '''
     output = {}
     for balance in balances:
         denom = balance['denom']
@@ -101,46 +91,81 @@ def balanceCheck(chain, walletAddr) -> dict:
 
     # print(chain, walletAddr, output)
     return dict(output)
+
+def getBalances(chain, walletAddr) -> dict:
+    '''
+    Gets the balances JSON from chain & returns those values
+    # [{"denom": "ucraft","amount": "69908452"},{"denom": "uexp","amount": "1000100"}]
+    '''
+
+    queryEndpoint = chainAPIs[chain][0] + walletAddr
+
+    r = requests.get(queryEndpoint, headers={
+        'accept': 'application/json', 
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36'}
+    ) 
+
+    if r.status_code != 200:
+        print(f"Error: {r.status_code} on {chainAPIs[chain][0]}")
+        return {}
+
+    # http://65.108.125.182:1317/cosmos/bank/v1beta1/balances/craft10r39fueph9fq7a6lgswu4zdsg8t3gxlqd6lnf0
+    return r.json()['balances']
     
-def post_update(chain, walletAddress, balanceDict):
+
+def getStatusValues(walletAddress, balance):
+    '''
+    Gets the status values of the account relative to thresholds in secrets.json.
+    & returns all these values for a given wallets check
+    '''
+    WARNING_LEVEL = WALLETS[walletAddress]['warning']
+    LOW_LEVEL = WALLETS[walletAddress]['low']
+
+    status = "" # good, warning, low
+    titleMsg = "" # ex: "CHAIN LOW (<100)"
+
+    if balance > WARNING_LEVEL:
+        status = "good"
+        titleMsg += f"{status.upper()} ( >{WARNING_LEVEL} )"
+    elif balance < WARNING_LEVEL and balance > LOW_LEVEL:
+        status = "warning"
+        titleMsg += f"{status.upper()} ( <{WARNING_LEVEL} )"
+    else:
+        status = "low"
+        titleMsg += f"{status.upper()} ( <{LOW_LEVEL} )"
+
+    HEX_COLOR = NOTIFIERS[status][0]
+    IMG_URL = NOTIFIERS[status][1]
+
+    return status, titleMsg, HEX_COLOR, IMG_URL
+
+def getAddressNote(walletAddress) -> str:
+    note = ""
+    if "note" in WALLETS[walletAddress]:
+        note = WALLETS[walletAddress]["note"]
+    return note
+
+def postUpdate(chain, walletAddress, balanceDict):
     if balanceDict == {}:
         return
 
     balance = balanceDict[list(balanceDict.keys())[0]] # main coin balance
 
-    # if SIMPLIFY_UDENOM_VALUES_TO_READABLE is true, we have to multiply amt?
+    status, titleMsg, hexColor, imgUrl = getStatusValues(walletAddress, balance)
     
-    WARNING_LEVEL = WALLETS[walletAddress]['warning']
-    LOW_LEVEL = WALLETS[walletAddress]['low']
-
-    myValue = ""
-    titleMsg = ""
-
-    if balance > WARNING_LEVEL:
-        myValue = "good"
-        titleMsg += f"{myValue.upper()} ( >{WARNING_LEVEL} )"
-
-    elif balance < WARNING_LEVEL and balance > LOW_LEVEL:
-        myValue = "warning"
-        titleMsg += f"{myValue.upper()} ( <{WARNING_LEVEL} )"
-
-    else:
-        myValue = "low"
-        titleMsg += f"{myValue.upper()} ( <{LOW_LEVEL} )"
-
-    HEX_COLOR = NOTIFIERS[myValue][0]
-    IMG_URL = NOTIFIERS[myValue][1]
-           
-    # dont past if we do not want to show good balances
-    if myValue == "good" and NOTIFY_GOOD_BALANCES == False:
+    # if we only want to show warning & low balances, this skips good balances beig shown
+    if status == "good" and NOTIFY_GOOD_BALANCES == False:
         print(f"{walletAddress} is good, notify good balances is just off")
-        return
+        return {}
 
     betterBalance = ""
     for d in balanceDict.keys():
         betterBalance += f"{d}: {balanceDict[d]}\n"
 
-    message = f"{str(chain).upper()} {titleMsg} | {walletAddress} | {betterBalance}"
+    # A short note/desc of the account. Returns "" if none is found
+    note = getAddressNote(walletAddress)
+
+    message = f"{str(chain).upper()} {titleMsg} | {walletAddress} | {betterBalance} |{note}"
     print(message)
 
     # print("Exit 0 in post_update for debugging"); exit(0)
@@ -155,28 +180,34 @@ def post_update(chain, walletAddress, balanceDict):
             print(f"Tweet sent for {tweet.id}: {message}")
 
         if DISCORD:
-            embed = discord.Embed(title=f"{chain.upper()} BALANCE {titleMsg}", description=walletAddress, timestamp=datetime.datetime.utcnow(), color=HEX_COLOR) #color=discord.Color.dark_gold()
-            # embed.add_field(name="Wallet", value=f"{walletAddress}")
+            embed = discord.Embed(title=f"{chain.upper()} BALANCE {titleMsg}", description=walletAddress, timestamp=datetime.datetime.utcnow(), color=hexColor) #color=discord.Color.dark_gold()
+            if len(note) > 0:
+                embed.add_field(name="Note", value=f"{note}", inline=False)
             embed.add_field(name="Balance", value=f"{betterBalance}")
-            if len(DISCORD_ACCOUNTS_TO_TAG) > 0:
-                embed.add_field(name="Tags", value=', '.join(DISCORD_ACCOUNTS_TO_TAG), inline=False)
-            embed.set_thumbnail(url=IMG_URL)
+            embed.set_thumbnail(url=imgUrl)
             webhook = Webhook.from_url(WEBHOOK_URL, adapter=RequestsWebhookAdapter()) # Initializing webhook
             webhook.send(username=USERNAME,embed=embed) # Executing webhook
 
     except Exception as err:
         print( str(err) + " OR Tweet failed due to being duplicate")
 
+
+def runBalanceCheckForWallet(chain, wallet):
+    balances = getBalances(chain, wallet)
+    simplified = simplifyBalances(balances)
+    postUpdate(chain, wallet, simplified)
+
 def runChecks():   
     print("Running checks...") 
 
+    # Go through all wallets & ChainAPis matching. If the wallet starts with a ChainAPI keyname
+    # check the balance of that wallet using the given LCD API
     checkedWallets = []
     for wallet in WALLETS:
         for chain in chainAPIs.keys():
             if wallet.startswith(chain):
                 checkedWallets.append(wallet)
-                b = balanceCheck(chain, wallet)
-                post_update(chain, wallet, b)
+                runBalanceCheckForWallet(chain, wallet)
 
     print(f"Wallets checked {time.ctime()}, waiting...")
 
@@ -186,7 +217,6 @@ def runChecks():
         for wallet in checkedWallets:
             _temp.remove(wallet)
         print("Left over wallets (no endpoints): " + str(_temp))
-
 
 
 if __name__ == "__main__":        
@@ -199,6 +229,3 @@ if __name__ == "__main__":
             # print("Running runnable then waiting...")
             schedule.run_pending()
             time.sleep(SCHEDULE_MINUTES*60)
-            
-
-    
