@@ -1,7 +1,14 @@
 # cosmos-balance-bot
 A useful little bot for Relayers, Validators using restake.app, Akash Escrow Accounts, hot wallets, and anything else you want to track!
 
-<img src="https://user-images.githubusercontent.com/31943163/164518627-e950400b-0ee9-4aa6-89b6-2508546f3b9c.png" alt="bot image" width="450"/>
+### Contact <a src="https://twitter.com/Reecepbcups_">@Reecepbcups_</a>
+
+</br>Delegate:
+- [Dig-Chain](https://ping.pub/dig/staking/digvaloper1ms3k4d9j7rzpzmq3d4jg4j4kffldfnq66wxdpj)
+- [Osmosis](https://ping.pub/osmosis/staking/osmovaloper18yaulrk9czghegrnykfe4fthl69m488qsrrfdr)
+
+</br>
+<img src="https://user-images.githubusercontent.com/31943163/164518627-e950400b-0ee9-4aa6-89b6-2508546f3b9c.png" alt="bot image" width="300"/>
 
 ## Setup:
 ```
