@@ -10,7 +10,6 @@ Delegate:
 </br>
 
 - [Dig-Chain](https://ping.pub/dig/staking/digvaloper1ms3k4d9j7rzpzmq3d4jg4j4kffldfnq66wxdpj)
-- [Osmosis](https://ping.pub/osmosis/staking/osmovaloper18yaulrk9czghegrnykfe4fthl69m488qsrrfdr)
 
 </br>
 <img src="https://user-images.githubusercontent.com/31943163/164914003-4df196f6-99a0-44ba-9537-d3901aabfb7f.png" alt="bot image" width="300"/>
