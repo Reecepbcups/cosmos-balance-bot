@@ -12,4 +12,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD [ "python", "./cosmos-balance-query-bot.py"]
+CMD [ "python", "./cosmos-balance-bot.py"]
