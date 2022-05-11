@@ -24,6 +24,7 @@ import schedule
 import time
 import json
 import tweepy
+import os
 
 from discord import Webhook, RequestsWebhookAdapter
 
@@ -38,6 +39,12 @@ NOTIFIERS = { # {wallet: { "note: "optional note", "warning": 50.0, "low": 10.0}
 
 # Don't touch below --------------------------------------------------
 
+PREFIX = "COSMOSBALBOT" # cosmos balance bot docker prefix. Useful for sensitive info
+def getENV(path, default):    
+    value = os.getenv(f"{PREFIX}_{path}", default)
+    return value
+
+
 with open('secrets.json', 'r') as f:
     secrets = json.load(f)
 
@@ -45,21 +52,28 @@ with open('secrets.json', 'r') as f:
     TWITTER = secrets["TWITTER"]["ENABLED"]
     TELEGRAM = secrets["TELEGRAM"]["ENABLED"]
 
-    USE_PYTHON_RUNNABLE = secrets["SCHEDULER"]["USE_PYTHON_RUNNABLE"]
-    SCHEDULE_MINUTES = secrets["SCHEDULER"]["IF_ABOVE_IS_TRUE_HOW_MANY_MINUTES_BETWEEN_CHECKS"]
+    # USE_PYTHON_RUNNABLE = bool(os.getenv(f"{PREFIX}_SCHEDULER_USE_PYTHON_RUNNABLE", secrets["SCHEDULER"]["USE_PYTHON_RUNNABLE"]))
+    # SCHEDULE_MINUTES = int(os.getenv(f"{PREFIX}_SCHEDULER_IF_ABOVE_IS_TRUE_HOW_MANY_MINUTES_BETWEEN_CHECKS", secrets["SCHEDULER"]["IF_ABOVE_IS_TRUE_HOW_MANY_MINUTES_BETWEEN_CHECKS"]))
+
+    USE_PYTHON_RUNNABLE = bool(getENV("SCHEDULER_USE_PYTHON_RUNNABLE", secrets["SCHEDULER"]["USE_PYTHON_RUNNABLE"]))
+    SCHEDULE_MINUTES = int(getENV("SCHEDULER_IF_ABOVE_IS_TRUE_HOW_MANY_MINUTES_BETWEEN_CHECKS", secrets["SCHEDULER"]["IF_ABOVE_IS_TRUE_HOW_MANY_MINUTES_BETWEEN_CHECKS"]))
 
     WALLETS = secrets['WALLETS'] # {wallet: { "good": 100.0, "warning": 50.0, "low": 10.0}}
     SIMPLIFY_UDENOM = secrets['SIMPLIFY_UDENOM_VALUES_TO_READABLE']# divided values by 1_000_000
     NOTIFY_GOOD_BALANCES = secrets['NOTIFY_GOOD_BALANCES']
 
-    if TWITTER:
-        twitSecrets = secrets['TWITTER']
-        APIKEY = twitSecrets['APIKEY']
-        APIKEYSECRET = twitSecrets['APIKEYSECRET']
-        ACCESS_TOKEN = twitSecrets['ACCESS_TOKEN']
-        ACCESS_TOKEN_SECRET = twitSecrets['ACCESS_TOKEN_SECRET']  
+    # loop through all os variables & print out keys for debugging
+    for key in os.environ:
+        if key.startswith(PREFIX):
+            print(f"OUR KEYS: {key} = {os.getenv(key)}")
 
-        TWITTER_ACCOUNTS_TO_TAG = twitSecrets['ACCOUNTS_TO_TAG']
+    if TWITTER:
+        APIKEY = os.getenv(f"{PREFIX}_TWITTER_APIKEY", secrets['TWITTER']['APIKEY'])
+        APIKEYSECRET = os.getenv(f"{PREFIX}_TWITTER_APIKEYSECRET", secrets['TWITTER']['APIKEYSECRET'])
+        ACCESS_TOKEN = os.getenv(f"{PREFIX}_TWITTER_ACCESS_TOKEN", secrets['TWITTER']['ACCESS_TOKEN'])
+        ACCESS_TOKEN_SECRET = os.getenv(f"{PREFIX}_TWITTER_ACCESS_TOKEN_SECRET", secrets['TWITTER']['ACCESS_TOKEN_SECRET'])
+
+        TWITTER_ACCOUNTS_TO_TAG = secrets['TWITTER']['ACCOUNTS_TO_TAG']
 
         # Authenticate to Twitter & Get API
         auth = tweepy.OAuth1UserHandler(APIKEY, APIKEYSECRET)
@@ -68,7 +82,7 @@ with open('secrets.json', 'r') as f:
 
     if DISCORD:
         discSecrets = secrets['DISCORD']
-        WEBHOOK_URL = discSecrets['WEBHOOK_URL']
+        WEBHOOK_URL = os.getenv(f"{PREFIX}_DISCORD_WEBHOOK_URL", discSecrets['WEBHOOK_URL'])
         USERNAME = discSecrets['USERNAME']
 
 
@@ -219,13 +233,17 @@ def runChecks():
         print("Left over wallets (no endpoints): " + str(_temp))
 
 
-if __name__ == "__main__":        
-    runChecks()
+if __name__ == "__main__":   
+    print("Initial run...")     
+    runChecks()       
 
     # If user does not use a crontab, this can be run in a screen/daemon session
+    # requires since time.sleep stops the thread, kuber w/ akash doesn't like that
     if USE_PYTHON_RUNNABLE:      
-        schedule.every(SCHEDULE_MINUTES).minutes.do(runChecks)  
+        prev = time.time()        
         while True:
-            # print("Running runnable then waiting...")
-            schedule.run_pending()
-            time.sleep(SCHEDULE_MINUTES*60)
+            now = time.time()
+            if now - prev > SCHEDULE_MINUTES*60:
+                prev = now
+                print("Checks would be run here")
+                runChecks()

@@ -1,0 +1,45 @@
+version: "2.0"
+
+services:
+  web:
+    image: reecepbcups/cosmos-balance-bot:latest
+    env: 
+      # only secrets work as env variables. Do not try to use other variables not here.
+      # Should allow enable runnable here too
+      # - COSMOSBALBOT_TWITTER_APIKEY=""
+      - COSMOSBALBOT_SCHEDULER_USE_PYTHON_RUNNABLE=true # Should be true for docker
+      - COSMOSBALBOT_SCHEDULER_SCHEDULER_IF_ABOVE_IS_TRUE_HOW_MANY_MINUTES_BETWEEN_CHECKS=1
+      - COSMOSBALBOT_DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/0000000/MY_WEBHOOK_URL"
+    expose:      
+      - port: 80
+        as: 80
+        to:
+          - global: true        
+
+profiles:
+  compute:
+    web:
+      resources:
+        cpu:
+          units: 0.25
+        memory:
+          size: 0.25Gi
+        storage:
+          size: 1Gi
+  placement:
+    dcloud:
+      attributes:
+        host: akash
+      signedBy:
+        anyOf:
+          - "akash1365yvmc4s7awdyj3n2sav7xfx76adc6dnmlx63"
+      pricing:
+        web:
+          denom: uakt
+          amount: 20
+
+deployment:
+  web:
+    dcloud:
+      profile: web
+      count: 1
