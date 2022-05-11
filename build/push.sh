@@ -1,0 +1,1 @@
+docker push reecepbcups/cosmos-balance-bot

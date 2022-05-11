@@ -1,0 +1,1 @@
+docker build -t reecepbcups/cosmos-balance-bot .
