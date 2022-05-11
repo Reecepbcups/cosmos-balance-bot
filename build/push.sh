@@ -1,1 +1,1 @@
-docker push reecepbcups/cosmos-balance-bot
+docker push reecepbcups/cosmos-balance-bot:1.2
