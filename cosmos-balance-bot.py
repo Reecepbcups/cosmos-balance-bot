@@ -233,17 +233,33 @@ def runChecks():
         print("Left over wallets (no endpoints): " + str(_temp))
 
 
+def my_tcp_server():
+    import socket
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind(('localhost', 25563))
+    sock.listen()
+    while True:
+        conn, address = sock.accept()
+        print("Connection from: " + str(address))
+        conn.close()
+
+import threading
 if __name__ == "__main__":   
     print("Initial run...")     
+    threading.Thread(target=my_tcp_server).start()
+    
     runChecks()       
 
     # If user does not use a crontab, this can be run in a screen/daemon session
     # requires since time.sleep stops the thread, kuber w/ akash doesn't like that
-    if USE_PYTHON_RUNNABLE:      
+    if USE_PYTHON_RUNNABLE:          
         prev = time.time()        
         while True:
             now = time.time()
             if now - prev > SCHEDULE_MINUTES*60:
+                
                 prev = now
                 print("Checks would be run here")
                 runChecks()
+
+        
