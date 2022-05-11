@@ -11,8 +11,8 @@ services:
       - COSMOSBALBOT_SCHEDULER_SCHEDULER_IF_ABOVE_IS_TRUE_HOW_MANY_MINUTES_BETWEEN_CHECKS=1
       - COSMOSBALBOT_DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/0000000/MY_WEBHOOK_URL"
     expose:      
-      - port: 80
-        as: 80
+      - port: 25563 # just a random port
+        as: 25563
         to:
           - global: true        
 
