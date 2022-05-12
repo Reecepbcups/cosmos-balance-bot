@@ -52,7 +52,7 @@ docker login
 
 # Build the image & push to docker hub
 docker build -t username/balance-bot .
-docker push username/cosmos-balance-bot:latest
+docker push username/balance-bot:latest
 
 # open the akashalytics deploy panel tool
 # https://www.akashlytics.com/deploy
