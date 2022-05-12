@@ -2,11 +2,10 @@ version: "2.0"
 
 services:
   web:
+    # Be sure you change this to your build to get your public keys JSON from secrets.json
     image: reecepbcups/balance-bot:1.0
     env: 
-      # only secrets work as env variables. Do not try to use other variables not here.
-      # Should allow enable runnable here too
-      # - COSMOSBALBOT_TWITTER_APIKEY=""
+      # only secrets work as env variables. Do not try to use other variables not here.      
       - COSMOSBALBOT_DEBUGGING=false # prints DEBUGGING note on all embeds
       - COSMOSBALBOT_SCHEDULER_USE_PYTHON_RUNNABLE=true # must be true for docker
       - COSMOSBALBOT_SCHEDULER_IF_ABOVE_IS_TRUE_HOW_MANY_MINUTES_BETWEEN_CHECKS=30
