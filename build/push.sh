@@ -1,4 +1,4 @@
-VERSION=1.0
+VERSION=1.3
 
-docker build -t reecepbcups/cosmos-balance-bot:$VERSION .
-docker push reecepbcups/cosmos-balance-bot:$VERSION
+docker build -t reecepbcups/balance-bot:$VERSION .
+docker push reecepbcups/balance-bot:$VERSION

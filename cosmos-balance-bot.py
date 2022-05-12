@@ -68,20 +68,29 @@ with open('secrets.json', 'r') as f:
     TWITTER = secrets["TWITTER"]["ENABLED"]
     TELEGRAM = secrets["TELEGRAM"]["ENABLED"]
 
-    # USE_PYTHON_RUNNABLE = bool(os.getenv(f"{PREFIX}_SCHEDULER_USE_PYTHON_RUNNABLE", secrets["SCHEDULER"]["USE_PYTHON_RUNNABLE"]))
-    # SCHEDULE_MINUTES = int(os.getenv(f"{PREFIX}_SCHEDULER_IF_ABOVE_IS_TRUE_HOW_MANY_MINUTES_BETWEEN_CHECKS", secrets["SCHEDULER"]["IF_ABOVE_IS_TRUE_HOW_MANY_MINUTES_BETWEEN_CHECKS"]))
-
     USE_PYTHON_RUNNABLE = bool(getENV(f"SCHEDULER_USE_PYTHON_RUNNABLE", secrets["SCHEDULER"]["USE_PYTHON_RUNNABLE"]))
     SCHEDULE_MINUTES = int(getENV(f"SCHEDULER_IF_ABOVE_IS_TRUE_HOW_MANY_MINUTES_BETWEEN_CHECKS", secrets["SCHEDULER"]["IF_ABOVE_IS_TRUE_HOW_MANY_MINUTES_BETWEEN_CHECKS"]))
 
-    WALLETS = secrets['WALLETS'] # {wallet: { "good": 100.0, "warning": 50.0, "low": 10.0}}
+    WALLETS = secrets['WALLETS']
+    _wallets = os.getenv(f"{PREFIX}_WALLETS") # only works on local linmux docker run
+    if _wallets is not None: # grabs from file, but if there is an env variable it uses that
+        WALLETS = dict(eval(_wallets))['WALLETS']
+        print("using" + _wallets + " from the env variable")
+    print(WALLETS)
+
     SIMPLIFY_UDENOM = secrets['SIMPLIFY_UDENOM_VALUES_TO_READABLE']# divided values by 1_000_000
-    NOTIFY_GOOD_BALANCES = secrets['NOTIFY_GOOD_BALANCES']
+    
+    NOTIFY_GOOD_BALANCES = os.getenv('COSMOSBALBOT_NOTIFY_GOOD_BALANCES', secrets['NOTIFY_GOOD_BALANCES'])
+    if NOTIFY_GOOD_BALANCES.lower().startswith("t"):
+        NOTIFY_GOOD_BALANCES = True
+    else:
+        NOTIFY_GOOD_BALANCES = False
+    # print("value: " + f"{NOTIFY_GOOD_BALANCES}")
 
     # loop through all os variables & print out keys for debugging
     for key in os.environ:
         if key.startswith(PREFIX):
-            print(f"OUR KEYS: {key} = {os.getenv(key)}")
+            print(f"\tOUR KEYS: {key} = {os.getenv(key)}")
 
     if TWITTER:
         APIKEY = os.getenv(f"{PREFIX}_TWITTER_APIKEY", secrets['TWITTER']['APIKEY'])
@@ -112,6 +121,11 @@ def simplifyBalances(balances: dict):
     for balance in balances:
         denom = balance['denom']
         amount = balance['amount']
+
+        if denom.startswith('ibc/'):
+            continue # skip non native assets
+        elif denom.startswith('gamm'):
+            continue # skip osmo pools
         
         # removes the u denom & divde by 1mil. So ucraft 1000000 = craft 1
         if SIMPLIFY_UDENOM and denom.startswith('u'):
@@ -184,7 +198,7 @@ def postUpdate(chain, walletAddress, balanceDict):
     status, titleMsg, hexColor, imgUrl = getStatusValues(walletAddress, balance)
     
     # if we only want to show warning & low balances, this skips good balances beig shown
-    if status == "good" and NOTIFY_GOOD_BALANCES == False:
+    if NOTIFY_GOOD_BALANCES == False and status == "good":
         print(f"{walletAddress} is good, notify good balances is just off")
         return {}
 
@@ -196,7 +210,7 @@ def postUpdate(chain, walletAddress, balanceDict):
     note = getAddressNote(walletAddress)
 
     message = f"{str(chain).upper()} {titleMsg} | {walletAddress} | {betterBalance} |{note}"
-    print(message)
+    print(message.replace("\n", "\\n"))
 
     # print("Exit 0 in post_update for debugging"); exit(0)
 
