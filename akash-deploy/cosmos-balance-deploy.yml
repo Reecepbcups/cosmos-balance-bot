@@ -2,13 +2,14 @@ version: "2.0"
 
 services:
   web:
-    image: reecepbcups/cosmos-balance-bot:1.2
+    image: reecepbcups/cosmos-balance-bot:2.9
     env: 
       # only secrets work as env variables. Do not try to use other variables not here.
       # Should allow enable runnable here too
       # - COSMOSBALBOT_TWITTER_APIKEY=""
-      - COSMOSBALBOT_SCHEDULER_USE_PYTHON_RUNNABLE=true # Should be true for docker
-      - COSMOSBALBOT_SCHEDULER_SCHEDULER_IF_ABOVE_IS_TRUE_HOW_MANY_MINUTES_BETWEEN_CHECKS=1
+      - COSMOSBALBOT_DEBUGGING=false # prints DEBUGGING note on all embeds
+      - COSMOSBALBOT_SCHEDULER_USE_PYTHON_RUNNABLE=true # must be true for docker
+      - COSMOSBALBOT_SCHEDULER_IF_ABOVE_IS_TRUE_HOW_MANY_MINUTES_BETWEEN_CHECKS=30
       - COSMOSBALBOT_DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/0000000/MY_WEBHOOK_URL"
     expose:      
       - port: 25563 # just a random port we listen too so the container does not drop
@@ -21,11 +22,11 @@ profiles:
     web:
       resources:
         cpu:
-          units: 0.25
+          units: 1
         memory:
-          size: 0.25Gi
-        storage:
           size: 1Gi
+        storage:
+          size: 2Gi
   placement:
     dcloud:
       attributes:
