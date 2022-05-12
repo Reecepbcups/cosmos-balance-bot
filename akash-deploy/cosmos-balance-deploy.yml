@@ -1,7 +1,7 @@
 version: "2.0"
 
 # Testing Locally
-# docker run -e COSMOSBALBOT_NOTIFY_GOOD_BALANCES=true -e COSMOSBALBOT_WALLETS='{"WALLETS":{"cosmos10r39fueph9fq7a6lgswu4zdsg8t3gxlqvvvyvn":{"note":"Reeces main cosmos wallet.\nThis is an optional key","warning":1.0,"low":0.25},"osmo1uwqjtgjhjctjc45ugy7ev5prprhehc7w3xx7ph":{"note":"Chandra Restake Wallet","warning":5.0,"low":2.0}}}' -e COSMOSBALBOT_DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/974114541275818536/WEBOOK_URL" reecepbcups/cosmos-balance-bot:1.1
+# docker run -e COSMOSBALBOT_NOTIFY_GOOD_BALANCES=true -e COSMOSBALBOT_WALLETS='{"WALLETS":{"cosmos10r39fueph9fq7a6lgswu4zdsg8t3gxlqvvvyvn":{"note":"Reeces main cosmos wallet.\nThis is an optional key","warning":1.0,"low":0.25},"osmo1uwqjtgjhjctjc45ugy7ev5prprhehc7w3xx7ph":{"note":"Chandra Restake Wallet","warning":5.0,"low":2.0}}}' -e COSMOSBALBOT_DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/974114541275818536/WEBOOK_URL" reecepbcups/cosmos-balance-bot:1.3
 
 services:
   web:
