@@ -37,6 +37,20 @@ NOTIFIERS = { # {wallet: { "note: "optional note", "warning": 50.0, "low": 10.0}
 }
 
 
+def main():
+    print("Initial run...")
+    runChecks()
+
+    if USE_PYTHON_RUNNABLE: 
+        # Can't use schedule bc its thread blocking = kuber thinks it dies
+        prev = time.time()        
+        while True:
+            now = time.time()
+            if now - prev > SCHEDULE_MINUTES*60:            
+                prev = now
+                print("Checks would be run here")
+                runChecks()
+
 # Don't touch below --------------------------------------------------
 
 PREFIX = "COSMOSBALBOT" # cosmos balance bot docker prefix. Useful for sensitive info
@@ -48,6 +62,8 @@ def getENV(path, default):
 with open('secrets.json', 'r') as f:
     secrets = json.load(f)
 
+    DEBUGGING = bool(getENV("DEBUGGING", False))
+
     DISCORD = secrets["DISCORD"]["ENABLED"]
     TWITTER = secrets["TWITTER"]["ENABLED"]
     TELEGRAM = secrets["TELEGRAM"]["ENABLED"]
@@ -55,8 +71,8 @@ with open('secrets.json', 'r') as f:
     # USE_PYTHON_RUNNABLE = bool(os.getenv(f"{PREFIX}_SCHEDULER_USE_PYTHON_RUNNABLE", secrets["SCHEDULER"]["USE_PYTHON_RUNNABLE"]))
     # SCHEDULE_MINUTES = int(os.getenv(f"{PREFIX}_SCHEDULER_IF_ABOVE_IS_TRUE_HOW_MANY_MINUTES_BETWEEN_CHECKS", secrets["SCHEDULER"]["IF_ABOVE_IS_TRUE_HOW_MANY_MINUTES_BETWEEN_CHECKS"]))
 
-    USE_PYTHON_RUNNABLE = bool(getENV("SCHEDULER_USE_PYTHON_RUNNABLE", secrets["SCHEDULER"]["USE_PYTHON_RUNNABLE"]))
-    SCHEDULE_MINUTES = int(getENV("SCHEDULER_IF_ABOVE_IS_TRUE_HOW_MANY_MINUTES_BETWEEN_CHECKS", secrets["SCHEDULER"]["IF_ABOVE_IS_TRUE_HOW_MANY_MINUTES_BETWEEN_CHECKS"]))
+    USE_PYTHON_RUNNABLE = bool(getENV(f"SCHEDULER_USE_PYTHON_RUNNABLE", secrets["SCHEDULER"]["USE_PYTHON_RUNNABLE"]))
+    SCHEDULE_MINUTES = int(getENV(f"SCHEDULER_IF_ABOVE_IS_TRUE_HOW_MANY_MINUTES_BETWEEN_CHECKS", secrets["SCHEDULER"]["IF_ABOVE_IS_TRUE_HOW_MANY_MINUTES_BETWEEN_CHECKS"]))
 
     WALLETS = secrets['WALLETS'] # {wallet: { "good": 100.0, "warning": 50.0, "low": 10.0}}
     SIMPLIFY_UDENOM = secrets['SIMPLIFY_UDENOM_VALUES_TO_READABLE']# divided values by 1_000_000
@@ -198,6 +214,7 @@ def postUpdate(chain, walletAddress, balanceDict):
             if len(note) > 0:
                 embed.add_field(name="Note", value=f"{note}", inline=False)
             embed.add_field(name="Balance", value=f"{betterBalance}")
+            if DEBUGGING: embed.add_field(name="DEBUGGING", value=f"{SCHEDULE_MINUTES=}")
             embed.set_thumbnail(url=imgUrl)
             webhook = Webhook.from_url(WEBHOOK_URL, adapter=RequestsWebhookAdapter()) # Initializing webhook
             webhook.send(username=USERNAME,embed=embed) # Executing webhook
@@ -233,33 +250,6 @@ def runChecks():
         print("Left over wallets (no endpoints): " + str(_temp))
 
 
-def my_tcp_server():
-    import socket
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(('localhost', 25563))
-    sock.listen()
-    while True:
-        conn, address = sock.accept()
-        print("Connection from: " + str(address))
-        conn.close()
-
 import threading
 if __name__ == "__main__":   
-    print("Initial run...")     
-    threading.Thread(target=my_tcp_server).start()
-    
-    runChecks()       
-
-    # If user does not use a crontab, this can be run in a screen/daemon session
-    # requires since time.sleep stops the thread, kuber w/ akash doesn't like that
-    if USE_PYTHON_RUNNABLE:          
-        prev = time.time()        
-        while True:
-            now = time.time()
-            if now - prev > SCHEDULE_MINUTES*60:
-                
-                prev = now
-                print("Checks would be run here")
-                runChecks()
-
-        
+    main()
