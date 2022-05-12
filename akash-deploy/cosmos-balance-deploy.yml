@@ -2,7 +2,7 @@ version: "2.0"
 
 services:
   web:
-    image: reecepbcups/cosmos-balance-bot:2.9
+    image: reecepbcups/balance-bot:1.0
     env: 
       # only secrets work as env variables. Do not try to use other variables not here.
       # Should allow enable runnable here too

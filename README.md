@@ -39,13 +39,34 @@ Discord:
 - Accounts to tag - doesn't work yet
 ```
 
-## Run in docker
-```
-In secrets.json "SCHEDULER", enable "USE_PYTHON_RUNNABLE".
-(If this is off, the bot would run 1 time with docker. Could be used with a crontab)
+## Run in akash
+```sh
+git clone https://github.com/Reecepbcups/cosmos-balance-bot.git
+cd cosmos-balance-bot
 
-docker build -t username/balancebot .
-docker run username/balancebot
+# open secrets.json & add in your wallet keys & tolerance levels
+# Ensure DISCORD ENABLED is true. (It should be by default)
+# You can put the other values if you wish, however there is support for environment variables
+
+docker login
+
+# Build the image & push to docker hub
+docker build -t username/balance-bot .
+docker push username/cosmos-balance-bot:latest
+
+# open the akashalytics deploy panel tool
+# https://www.akashlytics.com/deploy
+#
+# - Create Deployment
+# - From a File
+#
+# - Select cosmos-balance-bot/akash-deploy/cosmos-balance-deploy.yml
+#    - Update the image: to point to your location (username/balance-bot:latest)
+#    - Change the minute check and discord webhook URL to match your needs
+#      [If none is provided, your secrets.json will be used as default.]
+#
+# - You can alter the compute resources, however CPU is the majority of the cost.
+#          0.25CPU, 0.5GB RAM, and 1GB storage are recommended minimum.
 ```
 
 ## Install on a system
