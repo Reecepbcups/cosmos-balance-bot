@@ -260,6 +260,13 @@ chainAPIs = {
         },        
         "@Umee_CrossChain"
         ],
+    "kuji": [  
+        'https://kujira-api.polkachu.com/cosmos/bank/v1beta1/balances/',
+        {
+            "ping": 'https://explorer.chaintools.tech/kujira/gov',
+        },        
+        "@TeamKujira"
+        ],
     "craft": [ 
         'http://65.108.125.182:1317/cosmos/bank/v1beta1/balances/',
     ]
