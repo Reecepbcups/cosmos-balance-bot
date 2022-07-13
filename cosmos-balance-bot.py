@@ -58,6 +58,8 @@ def getENV(path, default):
     value = os.getenv(f"{PREFIX}_{path}", default)
     return value
 
+def str2bool(v) -> bool: 
+    return str(v).lower() in ("yes", "true", "t", "1")
 
 with open('secrets.json', 'r') as f:
     secrets = json.load(f)
@@ -80,7 +82,7 @@ with open('secrets.json', 'r') as f:
 
     SIMPLIFY_UDENOM = secrets['SIMPLIFY_UDENOM_VALUES_TO_READABLE'] # will divided values by 1_000_000 if true
     
-    NOTIFY_GOOD_BALANCES = os.getenv('COSMOSBALBOT_NOTIFY_GOOD_BALANCES', secrets['NOTIFY_GOOD_BALANCES'])
+    NOTIFY_GOOD_BALANCES = str2bool(os.getenv('COSMOSBALBOT_NOTIFY_GOOD_BALANCES', str(secrets['NOTIFY_GOOD_BALANCES'])))
     # print("value: " + f"{NOTIFY_GOOD_BALANCES}")
 
     # loop through all os variables & print out keys for debugging
