@@ -78,13 +78,9 @@ with open('secrets.json', 'r') as f:
         print("using" + _wallets + " from the env variable")
     print(WALLETS)
 
-    SIMPLIFY_UDENOM = secrets['SIMPLIFY_UDENOM_VALUES_TO_READABLE']# divided values by 1_000_000
+    SIMPLIFY_UDENOM = secrets['SIMPLIFY_UDENOM_VALUES_TO_READABLE'] # will divided values by 1_000_000 if true
     
     NOTIFY_GOOD_BALANCES = os.getenv('COSMOSBALBOT_NOTIFY_GOOD_BALANCES', secrets['NOTIFY_GOOD_BALANCES'])
-    if NOTIFY_GOOD_BALANCES.lower().startswith("t"):
-        NOTIFY_GOOD_BALANCES = True
-    else:
-        NOTIFY_GOOD_BALANCES = False
     # print("value: " + f"{NOTIFY_GOOD_BALANCES}")
 
     # loop through all os variables & print out keys for debugging
