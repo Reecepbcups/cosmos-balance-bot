@@ -128,6 +128,9 @@ def simplifyBalances(balances: dict):
         # removes the u denom & divde by 1mil. So ucraft 1000000 = craft 1
         if SIMPLIFY_UDENOM and denom.startswith('u'):
             output[denom[1::]] = int(amount) / 1_000_000
+        elif denom.startswith('aevmos'):
+            # bruh evmos u crazy
+            output[denom[1::]] = int(amount) / 1_000_000_000_000_000_000
         else:
             output[denom] = int(amount)
 
@@ -261,7 +264,7 @@ def runChecks():
             for wallet in checkedWallets:
                 # _temp.remove(wallet)
                 del _temp[wallet]
-            print("\n(ERROR): Left over wallets (MAKE SURE TO ADD AN ENDPOINT TIO ChainApis.py): \n" + ',\n'.join(_temp.keys()))
+            print("\n(ERROR): Left over wallets (MAKE SURE TO ADD AN ENDPOINT TO ChainApis.py): \n" + ',\n'.join(_temp.keys()))
         except Exception as err:
             print(str(err))
             print("Checked wallets: " + str(checkedWallets))
