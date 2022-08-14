@@ -148,7 +148,7 @@ def getBalances(chain, walletAddr) -> dict:
     ) 
 
     if r.status_code != 200:
-        print(f"Error: {r.status_code} on {chainAPIs[chain][0]}")
+        print(f"\n(Error): {r.status_code} on {chainAPIs[chain][0]}")
         return {}
 
     # http://65.108.125.182:1317/cosmos/bank/v1beta1/balances/craft10r39fueph9fq7a6lgswu4zdsg8t3gxlqd6lnf0
@@ -256,10 +256,15 @@ def runChecks():
 
     # Tell user which wallets were not checked due to no endpoints
     if len(checkedWallets) != len(WALLETS):
-        _temp = WALLETS
-        for wallet in checkedWallets:
-            _temp.remove(wallet)
-        print("Left over wallets (no endpoints): " + str(_temp))
+        try:
+            _temp = WALLETS
+            for wallet in checkedWallets:
+                # _temp.remove(wallet)
+                del _temp[wallet]
+            print("\n(ERROR): Left over wallets (MAKE SURE TO ADD AN ENDPOINT TIO ChainApis.py): \n" + ',\n'.join(_temp.keys()))
+        except Exception as err:
+            print(str(err))
+            print("Checked wallets: " + str(checkedWallets))
 
 
 import threading

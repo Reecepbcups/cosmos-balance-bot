@@ -51,7 +51,7 @@ chainAPIs = {
         '@osmosiszone'
         ],
     'cosmos': [
-        'https://lcd-cosmoshub.blockapsis.com/cosmos/bank/v1beta1/balances/',
+        'https://rest.cosmos.directory/cosmoshub/cosmos/bank/v1beta1/balances/',
         {
             "ping": 'https://ping.pub/cosmos/gov',
             "mintscan": 'https://www.mintscan.io/cosmos/proposals',
