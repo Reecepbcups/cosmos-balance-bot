@@ -5,30 +5,28 @@ Reece Williams (Reecepbcups | PBCUPS Validator [$OSMO, $DIG]) | April 21st, 2022
 - Twitter & Discord Integration + Endpoints
 
 Install:
-- pip install --no-cache-dir -r requirements.txt
+- pip install --no-cache-dir -r requirements/requirements.txt
 
 Run:
-- python cosmos-balance-bot.py
+- python src/cosmos-balance-bot.py
 
 Docker:
 - docker build -t reecepbcups/balancebot .
 - docker run reecepbcups/balancebot
-
-*Get REST lcd's in chain.json from https://github.com/cosmos/chain-registry
 '''
 
 import datetime
-import discord
-import requests
-import schedule
 import time
 import json
-import tweepy
 import os
 
-from discord import Webhook, RequestsWebhookAdapter
+# from discord import Webhook, RequestsWebhookAdapter
 
-from ChainApis import chainAPIs
+# from ChainApis import chainAPIs
+from cosmpy_api import CHAIN_APIS, get_all_chains
+from cosmpy_chain.convert import simplify_balances_dict
+from cosmpy_chain.queries import get_balances
+from utils.notifications import discord_notification
 
 NOTIFIERS = { # {wallet: { "note: "optional note", "warning": 50.0, "low": 10.0}}
     "good": [0x00FF00,"https://image.similarpng.com/very-thumbnail/2021/05/Checkmark-green-tick-isolated-on-transparent-background-PNG.png"],
@@ -66,9 +64,7 @@ with open('secrets.json', 'r') as f:
 
     DEBUGGING = bool(getENV("DEBUGGING", False))
 
-    DISCORD = secrets["DISCORD"]["ENABLED"]
-    TWITTER = secrets["TWITTER"]["ENABLED"]
-    TELEGRAM = secrets["TELEGRAM"]["ENABLED"]
+    DISCORD = secrets["DISCORD"]["ENABLED"]    
 
     USE_PYTHON_RUNNABLE = bool(getENV(f"SCHEDULER_USE_PYTHON_RUNNABLE", secrets["SCHEDULER"]["USE_PYTHON_RUNNABLE"]))
     SCHEDULE_MINUTES = int(getENV(f"SCHEDULER_IF_ABOVE_IS_TRUE_HOW_MANY_MINUTES_BETWEEN_CHECKS", secrets["SCHEDULER"]["IF_ABOVE_IS_TRUE_HOW_MANY_MINUTES_BETWEEN_CHECKS"]))
@@ -88,77 +84,14 @@ with open('secrets.json', 'r') as f:
     # loop through all os variables & print out keys for debugging
     for key in os.environ:
         if key.startswith(PREFIX):
-            print(f"\tOUR KEYS: {key} = {os.getenv(key)}")
-
-    if TWITTER:
-        APIKEY = os.getenv(f"{PREFIX}_TWITTER_APIKEY", secrets['TWITTER']['APIKEY'])
-        APIKEYSECRET = os.getenv(f"{PREFIX}_TWITTER_APIKEYSECRET", secrets['TWITTER']['APIKEYSECRET'])
-        ACCESS_TOKEN = os.getenv(f"{PREFIX}_TWITTER_ACCESS_TOKEN", secrets['TWITTER']['ACCESS_TOKEN'])
-        ACCESS_TOKEN_SECRET = os.getenv(f"{PREFIX}_TWITTER_ACCESS_TOKEN_SECRET", secrets['TWITTER']['ACCESS_TOKEN_SECRET'])
-
-        TWITTER_ACCOUNTS_TO_TAG = secrets['TWITTER']['ACCOUNTS_TO_TAG']
-
-        # Authenticate to Twitter & Get API
-        auth = tweepy.OAuth1UserHandler(APIKEY, APIKEYSECRET)
-        auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
-        api = tweepy.API(auth, wait_on_rate_limit=True)      
+            print(f"\tOUR KEYS: {key} = {os.getenv(key)}")    
 
     if DISCORD:
         discSecrets = secrets['DISCORD']
         WEBHOOK_URL = os.getenv(f"{PREFIX}_DISCORD_WEBHOOK_URL", discSecrets['WEBHOOK_URL'])
         USERNAME = discSecrets['USERNAME']
 
-
-def simplifyBalances(balances: dict):
-    '''
-    After using getBalances(chain, wallet) function return -> dict:
-    Reduces [{"denom": "ucraft","amount": "69908452"},{"denom": "uexp","amount": "1000100"}]
-    To: {'ucraft':69908452, 'uexp':1000100}
-    '''
-    output = {}
-    for balance in balances:
-        denom = balance['denom']
-        amount = balance['amount']
-
-        if denom.startswith('ibc/'):
-            continue # skip non native assets
-        elif denom.startswith('gamm'):
-            continue # skip osmo pools
-        
-        # removes the u denom & divde by 1mil. So ucraft 1000000 = craft 1
-        if SIMPLIFY_UDENOM and denom.startswith('u'):
-            output[denom[1::]] = int(amount) / 1_000_000
-        elif denom.startswith('aevmos'):
-            # bruh evmos u crazy
-            output[denom[1::]] = int(amount) / 1_000_000_000_000_000_000
-        else:
-            output[denom] = int(amount)
-
-    # print(chain, walletAddr, output)
-    return dict(output)
-
-def getBalances(chain, walletAddr) -> dict:
-    '''
-    Gets the balances JSON from chain & returns those values
-    # [{"denom": "ucraft","amount": "69908452"},{"denom": "uexp","amount": "1000100"}]
-    '''
-
-    queryEndpoint = chainAPIs[chain][0] + walletAddr
-
-    r = requests.get(queryEndpoint, headers={
-        'accept': 'application/json', 
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36'}
-    ) 
-
-    if r.status_code != 200:
-        print(f"\n(Error): {r.status_code} on {chainAPIs[chain][0]}")
-        return {}
-
-    # http://65.108.125.182:1317/cosmos/bank/v1beta1/balances/craft10r39fueph9fq7a6lgswu4zdsg8t3gxlqd6lnf0
-    return r.json()['balances']
-    
-
-def getStatusValues(walletAddress, balance):
+def getStatusValues(walletAddress, balance: float):
     '''
     Gets the status values of the account relative to thresholds in secrets.json.
     & returns all these values for a given wallets check
@@ -196,7 +129,7 @@ def postUpdate(chain, walletAddress, balanceDict):
 
     balance = balanceDict[list(balanceDict.keys())[0]] # main coin balance
 
-    status, titleMsg, hexColor, imgUrl = getStatusValues(walletAddress, balance)
+    status, titleMsg, hexColor, imgUrl = getStatusValues(walletAddress, float(balance))
     
     # if we only want to show warning & low balances, this skips good balances beig shown
     if NOTIFY_GOOD_BALANCES == False and status == "good":
@@ -214,33 +147,31 @@ def postUpdate(chain, walletAddress, balanceDict):
     print(message.replace("\n", "\\n"))
 
     # print("Exit 0 in post_update for debugging"); exit(0)
-
     try:
-        if TWITTER:
-            for acc in TWITTER_ACCOUNTS_TO_TAG:
-                twitterAt = f'@{acc}' if not acc.startswith('@') else acc
-                message += f" | {twitterAt}"
-
-            tweet = api.update_status(message)
-            print(f"Tweet sent for {tweet.id}: {message}")
-
         if DISCORD:
-            embed = discord.Embed(title=f"{chain.upper()} BALANCE {titleMsg}", description=walletAddress, timestamp=datetime.datetime.utcnow(), color=hexColor) #color=discord.Color.dark_gold()
+            values={"Balance": [f'{betterBalance}', False]}
             if len(note) > 0:
-                embed.add_field(name="Note", value=f"{note}", inline=False)
-            embed.add_field(name="Balance", value=f"{betterBalance}")
-            if DEBUGGING: embed.add_field(name="DEBUGGING", value=f"{SCHEDULE_MINUTES=}")
-            embed.set_thumbnail(url=imgUrl)
-            webhook = Webhook.from_url(WEBHOOK_URL, adapter=RequestsWebhookAdapter()) # Initializing webhook
-            webhook.send(username=USERNAME,embed=embed) # Executing webhook
+                values["Note"] = [f"{note}", False]
+            if DEBUGGING:                 
+                values["DEBUGGING"] = [f"{SCHEDULE_MINUTES=}", False]
+
+            discord_notification(
+                url=WEBHOOK_URL, 
+                title=f"{chain.upper()} BALANCE {titleMsg}", 
+                description=walletAddress, 
+                color=hexColor, 
+                values=values, 
+                imageLink=imgUrl, 
+                footerText=datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+            )
 
     except Exception as err:
         print( str(err) + " OR Tweet failed due to being duplicate")
 
 
 def runBalanceCheckForWallet(chain, wallet):
-    balances = getBalances(chain, wallet)
-    simplified = simplifyBalances(balances)
+    balances = get_balances(chain, wallet)
+    simplified = simplify_balances_dict(balances)
     postUpdate(chain, wallet, simplified)
 
 def runChecks():   
@@ -250,7 +181,7 @@ def runChecks():
     # check the balance of that wallet using the given LCD API
     checkedWallets = []
     for wallet in WALLETS:
-        for chain in chainAPIs.keys():
+        for chain in get_all_chains():
             if wallet.startswith(chain):
                 checkedWallets.append(wallet)
                 runBalanceCheckForWallet(chain, wallet)
@@ -270,6 +201,5 @@ def runChecks():
             print("Checked wallets: " + str(checkedWallets))
 
 
-import threading
 if __name__ == "__main__":   
     main()
