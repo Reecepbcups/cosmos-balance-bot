@@ -23,9 +23,9 @@ import os
 # from discord import Webhook, RequestsWebhookAdapter
 
 # from ChainApis import chainAPIs
-from cosmpy_api import CHAIN_APIS, get_all_chains
-from cosmpy_chain.convert import simplify_balances_dict
-from cosmpy_chain.queries import get_balances
+from pyibc_api import CHAIN_APIS, get_all_chains
+from pyibc_utils.convert import simplify_balances_dict
+from pyibc_chain.queries import get_balances
 from utils.notifications import discord_notification
 
 NOTIFIERS = { # {wallet: { "note: "optional note", "warning": 50.0, "low": 10.0}}
