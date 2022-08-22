@@ -76,7 +76,7 @@ git clone https://github.com/Reecepbcups/cosmos-balance-bot
 cd cosmos-balance-bot
 
 # Ensure you have python installed first. May just be `python` depending on your system
-python3 -m pip install --no-cache-dir -r requirements.txt
+python3 -m pip install --no-cache-dir -r requirements/requirements.txt
 
 # Edit secrets.json to your values, wallets, thresholds, etc.
 
