@@ -19,6 +19,7 @@ import datetime
 import time
 import json
 import os
+from typing import Dict
 
 # from discord import Webhook, RequestsWebhookAdapter
 
@@ -128,6 +129,8 @@ def postUpdate(chain, walletAddress, balanceDict):
         return
 
     balance = balanceDict[list(balanceDict.keys())[0]] # main coin balance
+    if isinstance(balance, str):
+        balance = balance.replace(',', '')
 
     status, titleMsg, hexColor, imgUrl = getStatusValues(walletAddress, float(balance))
     
@@ -168,11 +171,21 @@ def postUpdate(chain, walletAddress, balanceDict):
     except Exception as err:
         print( str(err) + " OR Tweet failed due to being duplicate")
 
+def santizeBalances(balances: Dict) -> Dict:
+    sanitized = {}
+    for denom, balance in balances.items():
+        if denom.startswith('ibc/'):
+            continue # skip non native assets
+        elif denom.startswith('gamm'):
+            continue # skip osmo pools
+        sanitized[denom] = balance
+    return sanitized
 
 def runBalanceCheckForWallet(chain, wallet):
     balances = get_balances(chain, wallet)
     simplified = simplify_balances_dict(balances)
-    postUpdate(chain, wallet, simplified)
+    sanitized = santizeBalances(simplified)
+    postUpdate(chain, wallet, sanitized)
 
 def runChecks():   
     print("Running checks...") 
