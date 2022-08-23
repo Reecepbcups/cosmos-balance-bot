@@ -80,4 +80,4 @@ python3 -m pip install --no-cache-dir -r requirements/requirements.txt
 
 # Edit secrets.json to your values, wallets, thresholds, etc.
 
-python3 cosmos-balance-query-bot.py
+python3 src/cosmos-balance-bot.py
