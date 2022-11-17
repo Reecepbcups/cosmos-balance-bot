@@ -6,5 +6,5 @@
 discord.py==1.7.3
 requests==2.27.1
 schedule==1.1.0
-python-ibc
+python-ibc>=0.2.0a1
 discord_webhook
