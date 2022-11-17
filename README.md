@@ -1,9 +1,10 @@
 # cosmos-balance-bot
+
 A useful little bot for Relayers, Validators using restake.app, Akash Escrow Accounts, hot wallets, and anything else you want to track!
 
 </br>
 
-Contact 
+Contact :
 [@Reecepbcups_](https://twitter.com/Reecepbcups_)
 
 Delegate:
@@ -14,8 +15,9 @@ Delegate:
 </br>
 <img src="https://user-images.githubusercontent.com/31943163/164914003-4df196f6-99a0-44ba-9537-d3901aabfb7f.png" alt="bot image" width="300"/>
 
-## Setup:
-```
+## Setup
+
+```sh
 Open secrets.json
 
 NOTIFY_GOOD_BALANCES:(default: false)
@@ -39,7 +41,8 @@ Discord:
 - Accounts to tag - doesn't work yet
 ```
 
-## Run in akash
+## Run in Akash
+
 ```sh
 git clone https://github.com/Reecepbcups/cosmos-balance-bot.git
 cd cosmos-balance-bot
@@ -70,14 +73,16 @@ docker push username/balance-bot:latest
 ```
 
 ## Install on a system
-```
+
+```sh
 git clone https://github.com/Reecepbcups/cosmos-balance-bot
 
 cd cosmos-balance-bot
 
 # Ensure you have python installed first. May just be `python` depending on your system
-python3 -m pip install --no-cache-dir -r requirements/requirements.txt
+python3 -m pip install --no-cache-dir -r requirements/requirements.txt --update
 
 # Edit secrets.json to your values, wallets, thresholds, etc.
 
 python3 src/cosmos-balance-bot.py
+```

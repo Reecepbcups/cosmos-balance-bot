@@ -24,7 +24,7 @@ from typing import Dict
 # from discord import Webhook, RequestsWebhookAdapter
 
 # from ChainApis import chainAPIs
-from pyibc_api import CHAIN_APIS, get_all_chains
+from pyibc_api import CHAIN_APIS_WALLETS, get_all_chains_by_wallet_prefix
 from pyibc_utils.convert import simplify_balances_dict
 from pyibc_chain.queries import get_balances
 from utils.notifications import discord_notification
@@ -126,7 +126,7 @@ def getAddressNote(walletAddress) -> str:
 
 def postUpdate(chain, walletAddress, balanceDict):
     if balanceDict == {}:
-        return
+        balanceDict = {"balance": 0.0}
 
     balance = balanceDict[list(balanceDict.keys())[0]] # main coin balance
     if isinstance(balance, str):
@@ -181,11 +181,11 @@ def santizeBalances(balances: Dict) -> Dict:
         sanitized[denom] = balance
     return sanitized
 
-def runBalanceCheckForWallet(chain, wallet):
-    balances = get_balances(chain, wallet)
+def runBalanceCheckForWallet(chain_name, wallet):
+    balances = get_balances(chain_name, wallet)    
     simplified = simplify_balances_dict(balances)
     sanitized = santizeBalances(simplified)
-    postUpdate(chain, wallet, sanitized)
+    postUpdate(chain_name, wallet, sanitized)
 
 def runChecks():   
     print("Running checks...") 
@@ -193,11 +193,16 @@ def runChecks():
     # Go through all wallets & ChainAPis matching. If the wallet starts with a ChainAPI keyname
     # check the balance of that wallet using the given LCD API
     checkedWallets = []
-    for wallet in WALLETS:
-        for chain in get_all_chains():
-            if wallet.startswith(chain):
+    wallet: str
+    wallet_prefix: str
+    for wallet_prefix in get_all_chains_by_wallet_prefix():        
+        # print(wallet_prefix)
+        for wallet in WALLETS:
+            if wallet.lower().startswith(wallet_prefix.lower()):                
                 checkedWallets.append(wallet)
-                runBalanceCheckForWallet(chain, wallet)
+                chain_name = CHAIN_APIS_WALLETS[wallet_prefix]
+                
+                runBalanceCheckForWallet(chain_name, wallet)        
 
     print(f"Wallets checked {time.ctime()}, waiting...")
 
@@ -208,7 +213,13 @@ def runChecks():
             for wallet in checkedWallets:
                 # _temp.remove(wallet)
                 del _temp[wallet]
-            print("\n(ERROR): Left over wallets (MAKE SURE TO ADD AN ENDPOINT TO ChainApis.py): \n" + ',\n'.join(_temp.keys()))
+
+            print("\nAvailable Wallet prefixes:")
+            print(', '.join(CHAIN_APIS_WALLETS.keys()))
+
+            print("\n(ERROR): Left over wallets (this wallet prefix does not seem to be in https://cosmos.directory [above]): \n" + ',\n'.join(_temp.keys()))
+
+
         except Exception as err:
             print(str(err))
             print("Checked wallets: " + str(checkedWallets))
